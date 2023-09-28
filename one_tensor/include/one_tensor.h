@@ -5,10 +5,12 @@
 #ifdef USE_DLPACK
 #include <dlpack/dlpack.h>
 #endif
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include "cuda_gadget.h"
 #include <cuda_fp16.h>
+#include <cuda/std/type_traits>
 struct Shape{
     size_t nDims;
     size_t d0=1,d1=1,d2=1,d3=1,d4=1;
@@ -55,6 +57,23 @@ struct Shape{
         }
     }
 };
+
+std::ostream & operator<<( std::ostream  & os,const half & val)
+{
+    os << __half2float(val)+0.0;
+    return os;
+}
+std::ostream & operator<<( std::ostream  & os,const uint8_t & val)
+{
+    os << val+0;
+    return os;
+}
+std::ostream & operator<<( std::ostream  & os,const int8_t & val)
+{
+    os << val+0;
+    return os;
+}
+
 template <typename DT>
 class OneTensor{
     public:
@@ -82,7 +101,7 @@ class OneTensor{
         }
         void FillHostData(DT val){
             for(size_t i=0;i<shape.nums();i++){
-                host_data[i]=val;
+                host_data[i]=DT(val);
             }
         }
         void sync_device(bool send=true){
@@ -100,8 +119,10 @@ class OneTensor{
             return static_cast<T>(host_data[index]);
         }
         void SetHostData(DT val,size_t index){
-            host_data[index]=val;
+            host_data[index]=DT(val);
         }
+       
+      
         void HostDataView(){
             if(shape.nDims !=2){
                 throw std::runtime_error("Current host data view don't support nDim:"+std::to_string(shape.nDims));
@@ -109,7 +130,7 @@ class OneTensor{
             for(int i=0; i<shape.d0; i++){
                 for(int j=0; j<shape.d1; j++){
                     int index = i*shape.d1+j;
-                    std::cout<<host_data[index]+0<<" ";
+                    std::cout<<host_data[index]<<" ";
                 }
                 std::cout<<std::endl;
             }
