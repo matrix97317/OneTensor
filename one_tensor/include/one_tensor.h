@@ -74,6 +74,26 @@ std::ostream & operator<<( std::ostream  & os,const int8_t & val)
     return os;
 }
 
+uint32_t int32_bit4(const int d0, 
+                const int d1,
+                const int d2,
+                const int d3,
+                const int d4,
+                const int d5,
+                const int d6,
+                const int d7
+                ){
+    uint32_t ret = ((d0&0x0000000f)<<28)+
+    ((d1&0x0000000f)<<24)+
+    ((d2&0x0000000f)<<20)+
+    ((d3&0x0000000f)<<16)+
+    ((d4&0x0000000f)<<12)+
+    ((d5&0x0000000f)<<8)+
+    ((d6&0x0000000f)<<4)+
+    ((d7&0x0000000f));
+    return ret;
+}
+
 template <typename DT>
 class OneTensor{
     public:
