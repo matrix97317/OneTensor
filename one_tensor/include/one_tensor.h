@@ -8,6 +8,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include "cnpy.h"
 #include "cuda_gadget.h"
 #include <cuda_fp16.h>
 #include <cuda/std/type_traits>
@@ -22,6 +23,46 @@ struct Shape{
         this->d3=s.d3;
         this->d4=s.d4;
         this->nDims=s.nDims;
+    }
+    Shape(std::vector<size_t> shape){
+        size_t shape_size = shape.size();
+        switch (shape_size)
+        {
+            case 1:
+                d0=shape[0];
+                nDims=1;
+                break;
+            case 2:
+                d0=shape[0];
+                d1=shape[1];
+                nDims=2;
+                break;
+            case 3:
+                d0=shape[0];
+                d1=shape[1];
+                d2=shape[2];
+                nDims=3;
+                break;
+            case 4:
+                d0=shape[0];
+                d1=shape[1];
+                d2=shape[2];
+                d3=shape[3];
+                nDims=4;
+                break;
+            case 5:
+                d0=shape[0];
+                d1=shape[1];
+                d2=shape[2];
+                d3=shape[3];
+                d4=shape[4];
+                nDims=5;
+                break;
+            default:
+                throw std::runtime_error("shape_size error: "+std::to_string(shape_size));
+                break;
+        }
+
     }
     Shape(size_t D0):d0(D0){nDims=1;};
     Shape(size_t D0,size_t D1):d0(D0),d1(D1){nDims=2;};
@@ -73,6 +114,13 @@ std::ostream & operator<<( std::ostream  & os,const int8_t & val)
     os << val+0;
     return os;
 }
+std::ostream & operator<<( std::ostream  & os,const Shape & val)
+{
+    os << "[ "<<val.d0<<", "<<val.d1<<", "\
+            <<val.d2<<", "<<val.d3<<", "\
+            <<val.d4<<", "<<" ]";
+    return os;
+}
 
 uint32_t int32_bit4(const int d0, 
                 const int d1,
@@ -100,6 +148,40 @@ class OneTensor{
         OneTensor(Shape s){
             shape=s;
             host_data = (DT*)malloc(s.size<DT>());
+        }
+        OneTensor(std::string fname){
+            std::string suffix = ".npy";
+            std::string substring = fname.substr(fname.length() - suffix.length());
+            if (substring!=suffix){
+                throw std::runtime_error("your input file'suffix is incorrect, must be '.npy' ");
+            }
+            cnpy::NpyArray npy_obj = cnpy::npy_load(fname);
+            if (npy_obj.shape.size() > 5){
+                throw std::runtime_error("OneTensor don't support 5 dims Tensor. ");
+            }
+            shape=Shape(npy_obj.shape);
+            host_data = (DT*)malloc(shape.size<DT>());
+            auto npy_data = npy_obj.as_vec<DT>();
+            for(int i=0;i<npy_data.size();i++){
+                this->SetHostData(npy_data[i],i);
+            }
+        }
+        OneTensor(std::string fname,std::string varname){
+            std::string suffix = ".npz";
+            std::string substring = fname.substr(fname.length() - suffix.length());
+            if (substring!=suffix){
+                throw std::runtime_error("your input file'suffix is incorrect, must be '.npz' ");
+            }
+            cnpy::NpyArray npy_obj = cnpy::npz_load(fname,varname);
+            if (npy_obj.shape.size() > 5){
+                throw std::runtime_error("OneTensor don't support 5 dims Tensor. ");
+            }
+            shape=Shape(npy_obj.shape);
+            host_data = (DT*)malloc(shape.size<DT>());
+            auto npy_data = npy_obj.as_vec<DT>();
+            for(int i=0;i<npy_data.size();i++){
+                this->SetHostData(npy_data[i],i);
+            }
         }
         ~OneTensor(){
             free(host_data);

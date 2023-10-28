@@ -33,7 +33,8 @@ a.HostDataView();
 a.sync_device();
 b.sync_device();
 c.sync_device();
-d.sync_device();
+d.sync_device(); // Send Host Data to Device
+d.sync_device(false); // Send Device Data to Host
 
 int8_t *  ptr = a.deviceData<int8_t>();
 
@@ -42,5 +43,14 @@ cudaStream_t stream;
 cudaStreamCreate(&stream);
 int iter_nums = 100;
 GPU_Time((your_func)), stream, iter_nums);
+
+// Load .npy or npz file from numpy
+OneTensor<float> npz_file("./test_data.npz","data");
+std::cout<<npz_file.shape<<std::endl;
+npz_file.HostDataView();
+
+OneTensor<float> npy_file("./test_data.npy");
+std::cout<<npy_file.shape<<std::endl;
+npy_file.HostDataView();
 
 ```
