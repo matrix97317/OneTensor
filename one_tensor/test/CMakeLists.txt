@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
-project(one_tensor LANGUAGES CXX CUDA)
+project(vec_add LANGUAGES CXX CUDA)
 
 set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
 set(CMAKE_CXX_STANDARD 17)
@@ -28,28 +28,25 @@ message(STATUS "CUDA_NVCC_FLAGS = ${CUDA_NVCC_FLAGS}")
 
 # set include file
 include_directories("/usr/local/cuda/include") # cuda include dir
+include_directories("./") # current include dir
 # set lib file
 link_directories("/usr/local/cuda/lib64")
 # set lib source file
-file(GLOB_RECURSE LIB_SRC "${CMAKE_SOURCE_DIR}/cuda_gadget.cpp"
-"${CMAKE_SOURCE_DIR}/cnpy.cpp")
-message(STATUS "LIB_SRC = ${LIB_SRC}")
+# file(GLOB_RECURSE LIB_SRC "./*.cu")
+# message(STATUS "LIB_SRC = ${LIB_SRC}")
 
 # build shared lib
-add_library(one_tensor SHARED ${LIB_SRC})
-target_link_libraries(one_tensor -lz)
-target_include_directories(one_tensor PUBLIC ${CMAKE_SOURCE_DIR}/include)
-set_target_properties(one_tensor PROPERTIES PUBLIC_HEADER 
-"${CMAKE_SOURCE_DIR}/include/cuda_gadget.h;\
-${CMAKE_SOURCE_DIR}/include/one_tensor.h;\
-${CMAKE_SOURCE_DIR}/include/cnpy.h")
-
-install(
-    TARGETS one_tensor
-    EXPORT MyOneTensorTargets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    PUBLIC_HEADER DESTINATION include
+# add_library(vec_add_shared SHARED ${LIB_SRC})
+# build executed file
+add_executable(
+    demo
+    "demo.cu"
     )
-
+# set link lib for executed file
+target_link_libraries(
+    demo
+    # vec_add_shared
+    -lcuda
+    -lcudart
+    -lone_tensor
+    )

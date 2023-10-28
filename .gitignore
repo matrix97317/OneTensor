@@ -19,6 +19,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 one_tensor/build/
+one_tensor/test/build/
 build/
 develop-eggs/
 dist/
