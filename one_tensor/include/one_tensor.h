@@ -97,6 +97,10 @@ struct Shape{
                 break;
         }
     }
+    std::vector<size_t> to_vector(){
+        std::vector<size_t> shape_vec={d0,d1,d2,d3,d4};
+        return shape_vec;
+    }
 };
 
 std::ostream & operator<<( std::ostream  & os,const half & val)
@@ -200,6 +204,10 @@ class OneTensor{
                 throw std::runtime_error("host_data is NULL");
             }
             return reinterpret_cast<T*>(host_data);  
+        }
+        template<typename T>
+        void SaveNpyFile(std::string fname){
+            cnpy::npy_save<T>(fname,reinterpret_cast<T*>(host_data),shape.to_vector());
         }
         void FillHostData(DT val){
             for(size_t i=0;i<shape.nums();i++){
