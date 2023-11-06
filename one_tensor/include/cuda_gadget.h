@@ -34,13 +34,13 @@ const char *getCublasErrorName(cublasStatus_t err);
     }
 
 // CUDA Measure Cost Time
-#define GPU_Time(EXPER, cu_stream,iter,bytes)           \
+#define GPU_Time(EXPER, cu_stream,iter,bytes)     \
+    float mtime = 0.0;                            \
     {                                             \
         for(int i=0; i<(iter+100); i++){              \
             (EXPER);                              \
         }                                         \
         cudaEvent_t start, stop;                  \
-        float time = 0.0;                         \
         cudaEventCreate(&start);                  \
         cudaEventCreate(&stop);                   \
         cudaEventRecord(start, cu_stream);        \
@@ -49,13 +49,13 @@ const char *getCublasErrorName(cublasStatus_t err);
         }                                         \
         cudaEventRecord(stop, cu_stream);         \
         cudaEventSynchronize(stop);               \
-        cudaEventElapsedTime(&time, start, stop); \
+        cudaEventElapsedTime(&mtime, start, stop); \
         cudaEventDestroy(start);                  \
         cudaEventDestroy(stop);                   \
-        printf("GPU Cost Time: %.7f ms\n", time/(iter)); \
+        printf("GPU Cost Time: %.7f ms\n", mtime/(iter)); \
         if (double(bytes)!=0){                           \
             printf("Bandwith: %.7f (GB/s)\n",            \
-            (double((bytes))/(1024*1024*1024))/(time/(iter*1000)) \
+            (double((bytes))/(1024*1024*1024))/(mtime/(iter*1000)) \
             );                                            \
         }                                                 \
     }

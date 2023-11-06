@@ -50,3 +50,16 @@ target_link_libraries(
     -lcudart
     -lone_tensor
     )
+
+add_executable(
+    test_bandwidth
+    "test_bandwidth.cu"
+    )
+# set link lib for executed file
+target_link_libraries(
+    test_bandwidth
+    # vec_add_shared
+    -lcuda
+    -lcudart
+    -lone_tensor
+    )
