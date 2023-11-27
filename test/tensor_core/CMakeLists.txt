@@ -20,8 +20,9 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};
                     "--expt-relaxed-constexpr"
                     "--expt-extended-lambda"
                     "--use_fast_math"
-                    "-Xptxas -dlcm=cv"
-                    "-Xptxas -dscm=wt")
+                    # "-Xptxas -dlcm=cv"
+                    # "-Xptxas -dscm=wt"
+                    "-Xptxas -dlcm=cg")
                     # "--gencode arch=compute_86,code=sm_86")
 
 message(STATUS "CUDA_NVCC_FLAGS = ${CUDA_NVCC_FLAGS}")
@@ -123,6 +124,19 @@ add_executable(
 # set link lib for executed file
 target_link_libraries(
     mma_m16n8k64_s4s4s32
+    # vec_add_shared
+    -lcuda
+    -lcudart
+    -lone_tensor
+    )
+
+add_executable(
+    load_block
+    "load_block.cu"
+    )
+# set link lib for executed file
+target_link_libraries(
+    load_block
     # vec_add_shared
     -lcuda
     -lcudart
