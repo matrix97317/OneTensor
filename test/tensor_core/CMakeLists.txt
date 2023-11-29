@@ -140,5 +140,6 @@ target_link_libraries(
     # vec_add_shared
     -lcuda
     -lcudart
+    -lcublas
     -lone_tensor
     )

@@ -191,6 +191,10 @@ class OneTensor{
             free(host_data);
             cudaFree(device_data);
         }
+        void release(){
+            free(host_data);
+            cudaFree(device_data);
+        }
         template<typename T>
         T * deviceData(){
             if (device_data==nullptr){

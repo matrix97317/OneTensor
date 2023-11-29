@@ -312,6 +312,25 @@ __device__ void load_block_major_col_half(half* global_ptr,
             }
         }
 
+        if(group_size==4){
+            size_t global_offset = global_row*cols+global_col;
+            if ((global_col >= cols)){
+                out[0] = 0;
+                out[1] = 0;
+                out[2] = 0;
+                out[3] = 0;
+            }else if ((global_col < cols) && (global_row+group_size >= rows)){
+                for(int i=0; i<(rows-global_row);i++){
+                    out[i] = global_ptr[global_offset+i*cols];
+                }
+            }else{
+                out[0] = global_ptr[global_offset+0*cols];
+                out[1] = global_ptr[global_offset+1*cols];
+                out[2] = global_ptr[global_offset+2*cols];
+                out[3] = global_ptr[global_offset+3*cols];
+            }
+        }
+
         if(group_size==8){
             size_t global_offset = global_row*cols+global_col;
             if ((global_col >= cols)){
@@ -339,5 +358,51 @@ __device__ void load_block_major_col_half(half* global_ptr,
             }
         }
 }
+
+
+
+__device__ void sm_visitor_row(int cols, int group_height,int group_width, int linear_index,int*l1_coord_row, int*l1_coord_col){
+    
+  
+    int group_cols = cols / group_width;
+    
+    int group_linear_index = linear_index % (group_height*group_width);
+    
+    
+    int group_id = linear_index / (group_height*group_width);
+   
+    int group_inner_coord_col = group_linear_index %  group_width;
+    int group_inner_coord_row = group_linear_index / group_width;
+    
+
+    int group_coord_col = group_id % group_cols;
+    int group_coord_row = group_id / group_cols;
+   
+    *l1_coord_col = group_inner_coord_col+group_coord_col*group_width;
+    *l1_coord_row = group_inner_coord_row+group_coord_row*group_height;
+    
+}
+__device__ void sm_visitor_col(int rows,int group_height,int group_width,int linear_index, int*l1_coord_row, int*l1_coord_col){
+    
+    int group_rows = rows / group_height;
+  
+    
+    int group_linear_index = linear_index % (group_height*group_width);
+    
+    
+    int group_id = linear_index / (group_height*group_width);
+   
+    int group_inner_coord_row = group_linear_index %  group_height;
+    int group_inner_coord_col = group_linear_index / group_height;
+    
+    int group_coord_row = group_id % group_rows;
+    int group_coord_col = group_id / group_rows;
+   
+    *l1_coord_col = group_inner_coord_col+group_coord_col*group_width;
+    *l1_coord_row = group_inner_coord_row+group_coord_row*group_height;
+}
+  
+   
+
 
 #endif
