@@ -279,8 +279,6 @@ __device__ void store_block_major_row_half(half* global_ptr,
                 UINT4(&global_ptr[global_offset])[0]=data;
             }
         }
-
-
 }
 
 __device__ void load_block_major_col_half(half* global_ptr, 
