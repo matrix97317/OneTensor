@@ -1,7 +1,9 @@
 #include <cuda_runtime.h>
 #include <iostream>
 #include <one_tensor.h>
+#include <cublas_v2.h>
 #include "data_transfer.cuh"
+#include "data_compute.cuh"
 using namespace std;
 
 // #define FLOAT4(ptr) (reinterpret_cast<float4*>(ptr))
@@ -345,59 +347,253 @@ using namespace std;
 
 
 
-__global__ void ld_block(half  *a, half  *b){
-
+__global__ void gemm_tb32_fp16fp32(
+                     half* mat_a, 
+                     half* mat_b, 
+                     float* mat_c,
+                     size_t M,
+                     size_t N,
+                     size_t K,
+                     size_t warp_m,
+                     size_t warp_n,
+                     size_t warp_k,
+                     size_t warp_x_num_in_tb,
+                     size_t warp_y_num_in_tb
+                     ){
     
-
-    int tid = blockDim.x*blockIdx.x+threadIdx.x; // wrap: 32Thread.
+    int bid = blockIdx.y * gridDim.x + blockIdx.x;
+    int tid = threadIdx.x;
+    // int warp_id = tid / 32;
+    int lane_id = tid % 32;
+    // step1. load data
+    __shared__ half mat_a_smem[2][8*32];
+    __shared__ half mat_b_smem[2][4*32];
+    // __shared__ float mat_c_smem[16*8];
+    __shared__ float mat_d_smem[16*8];
+    // __shared__ float mat_e_smem[16*8];
+    int sm_row_id=0;
+    int sm_col_id=0;
+    sm_visitor_col(gridDim.x,1,1,bid, &sm_row_id, &sm_col_id);
+    // printf("bid %d row %d col %d\n",bid,sm_row_id,sm_col_id);
+    // printf("warp_x_num_in_tb row %d\n",warp_x_num_in_tb);
+    // printf("sm col %d\n",sm_col_id);
    
-    __shared__ half smem[8*4*8];
-    
-    load_block_major_col_half(a,&smem[tid*8], 0,1, 32*8, 32,  32*8,1, tid,8);
+    mat_d_smem[lane_id*4+0]=0;
+    mat_d_smem[lane_id*4+1]=0;
+    mat_d_smem[lane_id*4+2]=0;
+    mat_d_smem[lane_id*4+3]=0;
+    int double_buffer=0;
+    load_block_major_row_half(mat_a,
+                                &mat_a_smem[double_buffer][lane_id*8],
+                                sm_row_id*warp_y_num_in_tb+0, 
+                                0,
+                                M,
+                                K,
+                                warp_m, 
+                                warp_k, 
+                                lane_id,
+                                8);
+    load_block_major_col_half(mat_b,
+                                &mat_b_smem[double_buffer][lane_id*4],
+                                0,
+                                sm_col_id*warp_x_num_in_tb+0, 
+                                K,
+                                N,
+                                warp_k, 
+                                warp_n, 
+                                lane_id,
+                                4);
     __syncthreads();
-    store_block_major_row_half(b,&smem[tid*8], 1,0, 2,  32*8,  1, 32*8, tid,8);
-    
-    // // b[tid]=smem[tid];
-    // if (tid < 31){
-    // b[tid*4+0]=smem[tid*4+0];
-    // b[tid*4+1]=smem[tid*4+1];
-    // b[tid*4+2]=smem[tid*4+2];
-    // b[tid*4+3]=smem[tid*4+3];
-    // }
+    for(int k=1; k<(K/warp_k); k++){
+        mma_m16n8k16_fp16fp32(mat_a_smem[double_buffer], mat_b_smem[double_buffer], mat_d_smem, mat_d_smem,lane_id);
+        double_buffer = double_buffer^1;
+        load_block_major_row_half(mat_a,
+                                &mat_a_smem[double_buffer][lane_id*8],
+                                sm_row_id*warp_y_num_in_tb+0, 
+                                k,
+                                M,
+                                K,
+                                warp_m, 
+                                warp_k, 
+                                lane_id,
+                                8);
+        load_block_major_col_half(mat_b,
+                                &mat_b_smem[double_buffer][lane_id*4],
+                                k,
+                                sm_col_id*warp_x_num_in_tb+0, 
+                                K,
+                                N,
+                                warp_k, 
+                                warp_n, 
+                                lane_id,
+                                4);
+        __syncthreads();
+        // step2. compute data
+    }
+    mma_m16n8k16_fp16fp32(mat_a_smem[double_buffer], mat_b_smem[double_buffer], mat_d_smem, mat_d_smem,lane_id);
+    // step3. store data
+    store_block_major_row(mat_c,
+                              &mat_d_smem[lane_id*4],
+                              sm_row_id*warp_y_num_in_tb+0,
+                              sm_col_id*warp_x_num_in_tb+0, 
+                              M,
+                              N,
+                              warp_m,
+                              warp_n,
+                              lane_id,
+                              4);
 }
 
 int main(){
-    OneTensor<half> a(Shape(32*8,32));
-    OneTensor<half> b(Shape(2,32*8));
-    b.FillHostData(0);
+
+    int measure_times = 200;
+    OneTensor<float> flops(Shape(measure_times));
+    OneTensor<float> cost_time(Shape(measure_times));
+    for(int cnt=199; cnt<measure_times;cnt++){
+    
+    int M = 16*(cnt+1)*5;
+    int N = 8*(cnt+1)*5;
+    int K = 16*1;
+    int warp_m = 16;
+    int warp_n = 8;
+    int warp_k = 16;
+
+    OneTensor<half> a(Shape(M,K));
+    OneTensor<half> b(Shape(K,N));
+    OneTensor<float> c(Shape(M,N));
+    c.FillHostData(0);
     for(int i=0; i<a.shape.d0; i++){
         for(int j=0; j<a.shape.d1; j++){
             int index = i*a.shape.d1+j;
-            a.SetHostData(half(index*1.0),index);
-            // b.SetHostData(j*1.0,index);
+            a.SetHostData(index*1,index);
         }
     }
-    a.HostDataView();
+    for(int i=0; i<b.shape.d0; i++){
+        for(int j=0; j<b.shape.d1; j++){
+            int index = i*b.shape.d1+j;
+            b.SetHostData(2,index);
+        }
+    }
+
+    // a.HostDataView();
     // b.HostDataView();
+    // c.HostDataView();
  
     a.sync_device();
     b.sync_device();
+    c.sync_device();
     
    
-    dim3 gird(1,1,1);
+    dim3 gird(ceil(N/warp_n),ceil(M/warp_m) ,1);
     dim3 block(32,1,1);
     cudaStream_t stream;
     cudaStreamCreate(&stream);
-    ld_block<<<gird,block,0,stream>>>(a.deviceData<half>(),
-                                       b.deviceData<half>()
-                                       );
+    // gemm_tb32_fp16fp32<<<gird,block,0,stream>>>(a.deviceData<half>(),
+    //                                             b.deviceData<half>(),
+    //                                             c.deviceData<float>(),
+    //                                             M,
+    //                                             N,
+    //                                             K,
+    //                                             warp_m,
+    //                                             warp_n,
+    //                                             warp_k,
+    //                                             1,
+    //                                             1);
+    // GPU_Time((gemm_tb32_fp16fp32<<<gird,block,0,stream>>>(a.deviceData<half>(),
+    //                                             b.deviceData<half>(),
+    //                                             c.deviceData<float>(),
+    //                                             M,
+    //                                             N,
+    //                                             K,
+    //                                             warp_m,
+    //                                             warp_n,
+    //                                             warp_k,
+    //                                             1,
+    //                                             1)), stream, 200,0);
     // GPU_Time((ld_block<<<gird,block,0,stream>>>(a.deviceData<float>(),b.deviceData<float>())), 
     //             stream,
     //             10,
     //             Shape(8,4).size<float>()*2);
-   
-    b.sync_device(false);
-    b.HostDataView();
+    
+
+    float alpha = 1.0;
+    float beta = 0.0;
+    cudaDeviceSynchronize();
+    cublasHandle_t blas_handle;
+    cublasCreate(&blas_handle);
+    cublasSetStream(blas_handle, stream);
+    // (cublasHgemm(blas_handle,
+    //                     CUBLAS_OP_N,
+    //                     CUBLAS_OP_N,
+    //                     N,
+    //                     M,
+    //                     K,
+    //                     &alpha,
+    //                     b.deviceData<half>(),
+    //                     N,
+    //                     a.deviceData<half>(),
+    //                     K,
+    //                     &beta,
+    //                     c.deviceData<half>(),
+    //                     N));
+    // GPU_Time((cublasHgemm(blas_handle,
+    //                     CUBLAS_OP_N,
+    //                     CUBLAS_OP_N,
+    //                     N,
+    //                     M,
+    //                     K,
+    //                     &alpha,
+    //                     b.deviceData<half>(),
+    //                     N,
+    //                     a.deviceData<half>(),
+    //                     K,
+    //                     &beta,
+    //                     c.deviceData<half>(),
+    //                     N)),stream,200,0);
+    cublasGemmAlgo_t algo_list[19] = {
+        CUBLAS_GEMM_DFALT,
+        CUBLAS_GEMM_DEFAULT_TENSOR_OP,
+        CUBLAS_GEMM_DFALT_TENSOR_OP,
+        CUBLAS_GEMM_ALGO0_TENSOR_OP,
+        CUBLAS_GEMM_ALGO1_TENSOR_OP,
+        CUBLAS_GEMM_ALGO2_TENSOR_OP,
+        CUBLAS_GEMM_ALGO3_TENSOR_OP,
+        CUBLAS_GEMM_ALGO4_TENSOR_OP,
+        CUBLAS_GEMM_ALGO5_TENSOR_OP,
+        CUBLAS_GEMM_ALGO6_TENSOR_OP,
+        CUBLAS_GEMM_ALGO7_TENSOR_OP,
+        CUBLAS_GEMM_ALGO8_TENSOR_OP,
+        CUBLAS_GEMM_ALGO9_TENSOR_OP,
+        CUBLAS_GEMM_ALGO10_TENSOR_OP,
+        CUBLAS_GEMM_ALGO11_TENSOR_OP,
+        CUBLAS_GEMM_ALGO12_TENSOR_OP,
+        CUBLAS_GEMM_ALGO13_TENSOR_OP,
+        CUBLAS_GEMM_ALGO14_TENSOR_OP,
+        CUBLAS_GEMM_ALGO15_TENSOR_OP};
+    (cublasGemmEx(
+        blas_handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K,
+        &alpha, b.deviceData<half>(), CUDA_R_16F, N, a.deviceData<half>(), CUDA_R_16F, K, &beta, c.deviceData<float>(), CUDA_R_32F, N,
+        CUBLAS_COMPUTE_32F, algo_list[1]));
+    // GPU_Time((cublasGemmEx(
+    //     blas_handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K,
+    //     &alpha, b.deviceData<half>(), CUDA_R_16F, N, a.deviceData<half>(), CUDA_R_16F, K, &beta, c.deviceData<float>(), CUDA_R_32F, N,
+    //     CUBLAS_COMPUTE_32F, algo_list[1])),stream,200,0);
+    cublasDestroy(blas_handle);
+
+ 
+    // c.sync_device(false);
+    // c.HostDataView();
+    
+    // cost_time.SetHostData((mtime/(200)),cnt);
+    // flops.SetHostData(M*N*K,cnt);
+    // a.release();
+    // b.release();
+    // c.release();
     cudaStreamDestroy(stream);
+    }
+    // cost_time.SaveNpyFile<float>("cublas_cost_time.npy");
+    // flops.SaveNpyFile<float>("cublas_flops.npy");
+
+    
     return 0;
 }

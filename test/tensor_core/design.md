@@ -10,6 +10,8 @@
 - float4/uint4
 - ThreadBlock Swizzle
 - WrapBlock Swizzle
+- load-matrix
+- async_copy
 ### Computing Pipeline
 - Load Data -> Compute Data -> Store Data
 
@@ -22,3 +24,8 @@
 | ----------- | --------------------------------------- |
 | GEMM        | [benchmark](./md_doc/gemm_benchmark.md) |
 |             |                                         |
+
+
+### Reference
+- https://github.com/Bruce-Lee-LY/cuda_hgemm/tree/master
+- https://github.com/nicolaswilde/cuda-tensorcore-hgemm/tree/master
