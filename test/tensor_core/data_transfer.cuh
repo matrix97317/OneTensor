@@ -88,4 +88,7 @@ __device__ void sm_visitor_col(int rows,int group_height,int group_width,int lin
    
 
 
+
+
+
 #endif
