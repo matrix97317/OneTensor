@@ -73,10 +73,10 @@ int main(){
     ldmatrix<<<gird,block,0,stream>>>(a.deviceData<half>(),
                                        b.deviceData<half>()
                                        );
-    GPU_Time((ldmatrix<<<gird,block,0,stream>>>(a.deviceData<half>(),b.deviceData<half>())), 
-                stream,
-                10,
-                Shape(16,16).size<half>()*2);
+    // GPU_Time((ldmatrix<<<gird,block,0,stream>>>(a.deviceData<half>(),b.deviceData<half>())), 
+    //             stream,
+    //             10,
+    //             Shape(16,16).size<half>()*2);
     cudaStreamDestroy(stream);
 
     // b.sync_device(false);
