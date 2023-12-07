@@ -131,12 +131,12 @@ target_link_libraries(
     )
 
 add_executable(
-    load_block
-    "load_block.cu"
+    gemm
+    "gemm.cu"
     )
 # set link lib for executed file
 target_link_libraries(
-    load_block
+    gemm
     # vec_add_shared
     -lcuda
     -lcudart

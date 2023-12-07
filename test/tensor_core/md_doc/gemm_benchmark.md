@@ -2,20 +2,27 @@
 
 ### Memory Access Trick of Bag
 
-- [x] float4/uint4
+- [x] float4/Uint4
 - [x] ThreadBlock Swizzle
-- [ ] WrapBlock Swizzle
-- [ ] load-matrix
-- [ ] async_copy
+- [x] WrapBlock Swizzle
+- [x] Load Matrix
+- [x] Async Copy
+- [x] Share Mem Bank Free
 
 ### Computing Trick of Bag
 
-- [x] Double buffer
+- [x] MultiStage Buffer
 
-For M,N >>> INF, K = 16, cublas TB=128.
 
-### V1
 
-design: ![TB32](../asset/TB32_M16N8K16_FP16FP32.drawio.png)
+### TB128 & TB256
 
-benchmark: 
+**design**: ![TB128&256](../asset/TB256_M16N8K16_FP16FP32.drawio.png)
+
+**benchmark**: 
+- Device: GTX3080TI
+- CUDA Version: 11.8
+
+![TB128K256](../asset/GEMM_TB128_K256_benchmark.jpg)
+
+![TB256MNK](../asset/GEMM_TB128_MNK_B_benchmark.jpg)

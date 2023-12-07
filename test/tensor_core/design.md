@@ -10,13 +10,14 @@
 - float4/uint4
 - ThreadBlock Swizzle
 - WrapBlock Swizzle
-- load-matrix
-- async_copy
+- Load Matrix
+- Async Copy
+- Share Mem Bank Free
 ### Computing Pipeline
 - Load Data -> Compute Data -> Store Data
 
 ### Computing Trick of Bag
-- Double buffer
+- MultiStage Buffer
 
 ### Benchmark
 
