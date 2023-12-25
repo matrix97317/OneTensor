@@ -235,20 +235,66 @@ class OneTensor{
         void SetHostData(DT val,size_t index){
             host_data[index]=DT(val);
         }
-       
-      
-        void HostDataView(){
-            if(shape.nDims !=2){
+        void HostDataReshape(int* reshape_axis){
+            if((shape.nDims !=2) && (shape.nDims !=4)){
                 throw std::runtime_error("Current host data view don't support nDim:"+std::to_string(shape.nDims));
             }
-            for(int i=0; i<shape.d0; i++){
-                for(int j=0; j<shape.d1; j++){
-                    int index = i*shape.d1+j;
-                    std::cout<<host_data[index]<<" ";
+            if(shape.nDims == 4){
+                std::vector<size_t> shape_vec = shape.to_vector();
+                size_t cnt=0;
+                DT* temp_host_data = (DT*)malloc(shape.size<DT>());
+                for(int i=0; i< shape_vec[reshape_axis[0]]; i++){
+                    for(int j=0; j<shape_vec[reshape_axis[1]]; j++){
+                        for(int k=0; k<shape_vec[reshape_axis[2]]; k++){
+                            for(int l=0; l<shape_vec[reshape_axis[3]]; l++){
+                                int index = i*shape.strides(reshape_axis[0])+\
+                                            j*shape.strides(reshape_axis[1])+\
+                                            k*shape.strides(reshape_axis[2])+\
+                                            l*shape.strides(reshape_axis[3]);
+                                temp_host_data[cnt] = host_data[index];
+                                cnt++;
+                            }
+                        }
+                    }
+                }
+                shape = Shape(shape_vec[reshape_axis[0]],shape_vec[reshape_axis[1]],shape_vec[reshape_axis[2]], shape_vec[reshape_axis[3]]);
+                free(host_data);
+                host_data = temp_host_data;
+            }
+            
+        }
+      
+        void HostDataView(){
+            if((shape.nDims !=2) && (shape.nDims !=4)){
+                throw std::runtime_error("Current host data view don't support nDim:"+std::to_string(shape.nDims));
+            }
+            if(shape.nDims == 2){
+                for(int i=0; i<shape.d0; i++){
+                    for(int j=0; j<shape.d1; j++){
+                        int index = i*shape.d1+j;
+                        std::cout<<host_data[index]<<" ";
+                    }
+                    std::cout<<std::endl;
                 }
                 std::cout<<std::endl;
             }
-            std::cout<<std::endl;
+            if(shape.nDims == 4){
+                for(int bs=0; bs<shape.d0;bs++){
+                    std::cout<<"< "<<std::endl;
+                    for(int h=0; h<shape.d1; h++){
+                        for(int w=0; w<shape.d2; w++){
+                            std::cout<<"[ ";
+                            for(int c=0; c<shape.d3; c++){
+                                int index = bs*shape.strides(0)+h*shape.strides(1)+w*shape.strides(2)+c;
+                                std::cout<<host_data[index]<<" ";
+                            }
+                            std::cout<<" ], ";
+                        }
+                        std::cout<<std::endl;
+                    }
+                    std::cout<<" >"<<std::endl;
+                }
+            }
         }
         Shape shape;
     private:

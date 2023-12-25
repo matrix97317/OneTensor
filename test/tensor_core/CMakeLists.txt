@@ -143,3 +143,56 @@ target_link_libraries(
     -lcublas
     -lone_tensor
     )
+add_executable(
+    gemm_split_k
+    "gemm_split_k.cu"
+    )
+# set link lib for executed file
+target_link_libraries(
+    gemm_split_k
+    # vec_add_shared
+    -lcuda
+    -lcudart
+    -lcublas
+    -lone_tensor
+    )
+add_executable(
+    sp_mma_m16n8k16_f16f16f32
+    "sp_mma_m16n8k16_f16f16f32.cu"
+    )
+# set link lib for executed file
+target_link_libraries(
+    sp_mma_m16n8k16_f16f16f32
+    # vec_add_shared
+    -lcuda
+    -lcudart
+    -lone_tensor
+    )
+  
+add_executable(
+    conv2d
+    "conv2d.cu"
+    )
+# set link lib for executed file
+target_link_libraries(
+    conv2d
+    # vec_add_shared
+    -lcudnn
+    -lcuda
+    -lcudart
+    -lone_tensor
+    )
+
+add_executable(
+    reduce
+    "reduce.cu"
+    )
+# set link lib for executed file
+target_link_libraries(
+    reduce
+    # vec_add_shared
+    -lcudnn
+    -lcuda
+    -lcudart
+    -lone_tensor
+    )
