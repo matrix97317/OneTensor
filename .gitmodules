@@ -1,0 +1,4 @@
+[submodule "test/cutlass"]
+	path = test/cutlass
+	url = https://github.com/NVIDIA/cutlass.git
+	branch = v3.1.0
