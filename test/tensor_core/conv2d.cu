@@ -1,7 +1,7 @@
 #include<one_tensor.h>
 #include<cudnn.h>
 
-#define BS 2
+#define BS 1
 #define H 7
 #define W 7
 #define IC 2048
@@ -134,7 +134,7 @@ int main(){
                             workSpaceSize,
                             (void*)(&beta),
                             cudnnOdesc, 
-                            outputTensor.deviceData<half>()),stream,1,0);
+                            outputTensor.deviceData<half>()),stream,100,0);
     
     // outputTensor.sync_device(false);
     // outputTensor.HostDataView();

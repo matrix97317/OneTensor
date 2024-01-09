@@ -28,9 +28,14 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};
 message(STATUS "CUDA_NVCC_FLAGS = ${CUDA_NVCC_FLAGS}")
 
 # set include file
+include_directories("../cutlass/include")
+include_directories("../cutlass/tools/util/include")
+include_directories("../cutlass/tools/library/include")
 include_directories("/usr/local/cuda/include") # cuda include dir
+include_directories("/workspace/code_space/OneTensor/libcusparse_lt-linux-x86_64-0.4.0.7-archive/include")
 include_directories("./") # current include dir
 # set lib file
+link_directories("/workspace/code_space/OneTensor/libcusparse_lt-linux-x86_64-0.4.0.7-archive/lib")
 link_directories("/usr/local/cuda/lib64")
 # set lib source file
 # file(GLOB_RECURSE LIB_SRC "./*.cu")
@@ -194,5 +199,72 @@ target_link_libraries(
     -lcudnn
     -lcuda
     -lcudart
+    -lone_tensor
+    )
+
+add_executable(
+    cusparse_lt
+    "cusparse_lt.cu"
+    )
+# set link lib for executed file
+target_link_libraries(
+    cusparse_lt
+    # vec_add_shared
+    -lcudnn
+    -lcuda
+    -lcudart
+    -lcusparse
+    -lcusparseLt
+    -lone_tensor
+    )
+
+
+add_executable(
+    cusparse_lt2
+    "cusparse_lt2.cu"
+    )
+# set link lib for executed file
+target_link_libraries(
+    cusparse_lt2
+    # vec_add_shared
+    -lcudnn
+    -lcuda
+    -lcudart
+    -lcusparse
+    -lcusparseLt
+    -lone_tensor
+    )
+
+add_executable(
+    sparse_conv2d
+    "sparse_conv2d.cu"
+    )
+# set link lib for executed file
+target_link_libraries(
+    sparse_conv2d    
+    # vec_add_shared
+    -lcudnn
+    -lcuda
+    -lcublas
+    -lcudart
+    -lcusparse
+    -lcusparseLt
+    -lone_tensor
+    )
+
+add_executable(
+    gemm_cute
+    "gemm_cute.cu"
+    )
+# set link lib for executed file
+target_link_libraries(
+    gemm_cute    
+    # vec_add_shared
+    -lcudnn
+    -lcuda
+    -lcublas
+    -lcudart
+    -lcusparse
+    -lcusparseLt
     -lone_tensor
     )

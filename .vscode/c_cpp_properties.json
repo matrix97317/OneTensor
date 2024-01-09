@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/local/cuda/include",
+                "${workspaceFolder}/one_tensor/include",
+                "${workspaceFolder}/test/cutlass/include",
+                "${workspaceFolder}/test/cutlass/tools/util/include",
+                "${workspaceFolder}/test/cutlass/tools/library/include",
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}

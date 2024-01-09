@@ -28,6 +28,10 @@ gemm_k = IC*FH*FW
 np.random.seed(666)
 x = np.random.rand(N,H,W,IC)
 w = np.random.rand(OC,FH,FW,IC)
+np.save("x",x.astype(np.float16))
+np.save("w",w.astype(np.float16))
+print(x)
+
 y = np.zeros((N,OH,OW,OC))
 y = y.reshape((N*OH*OW,OC))
 
@@ -48,8 +52,12 @@ for gemm_i in range(gemm_m):
         accum = 0
         for g_k in range(gemm_k):
             k = gemm_j
-            c = g_k // (FH*FW)
-            crs_residual = g_k % (FH*FW)
+            # c = g_k // (FH*FW)
+            # crs_residual = g_k % (FH*FW)
+            
+            
+            c = g_k % IC
+            crs_residual = g_k // IC
             r = crs_residual // FW
             s = crs_residual % FW
             
