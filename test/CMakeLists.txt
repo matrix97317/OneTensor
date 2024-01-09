@@ -27,6 +27,9 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};
 message(STATUS "CUDA_NVCC_FLAGS = ${CUDA_NVCC_FLAGS}")
 
 # set include file
+include_directories("../test/cutlass/include")
+include_directories("../test/cutlass/tools/util/include")
+include_directories("../test/cutlass/tools/library/include")
 include_directories("/usr/local/cuda/include") # cuda include dir
 include_directories("./") # current include dir
 # set lib file
@@ -61,5 +64,33 @@ target_link_libraries(
     # vec_add_shared
     -lcuda
     -lcudart
+    -lone_tensor
+    )
+
+add_executable(
+    test_cute
+    "test_cute.cu"
+    )
+# set link lib for executed file
+target_link_libraries(
+    test_cute
+    # vec_add_shared
+    -lcuda
+    -lcudart
+    -lcublas
+    -lone_tensor
+    )
+
+add_executable(
+    test_cutlass_conv
+    "test_cutlass_conv.cu"
+    )
+# set link lib for executed file
+target_link_libraries(
+    test_cutlass_conv
+    # vec_add_shared
+    -lcuda
+    -lcudart
+    -lcublas
     -lone_tensor
     )

@@ -12,7 +12,7 @@ cublas_flops = np.load("./build/cublas_flops.npy").flatten()[:-1]
 cublas_cost_time = np.load("./build/cublas_cost_time.npy").flatten()[:-1] / 1000
 
 K=v0flops
-TB=256
+TB=128
 width=1
 x = [i for i in range(len(v0flops))]
 v0flops_s = ((v0flops*K*v0flops/(1e9))/v0cost_time)
@@ -22,7 +22,7 @@ cublas_flops_s = ((cublas_flops*K*cublas_flops/(1e9))/cublas_cost_time)
 
 print(x)
 plt.figure(1,figsize=(16,8),dpi=100)
-plt.suptitle(f"FP16FP16-FP32-TB{TB}")
+plt.suptitle(f"FP16FP16-FP16-TB{TB}")
 ax = plt.subplot(1,1,1)
 ax.set_xlabel('Matrix Size (M=N=K)')
 ax.set_ylabel('G-FLOPs/S ')
@@ -37,4 +37,4 @@ ax.plot(x,v0flops_s,label='Our')
 ax.plot(x,cublas_flops_s,label='cublas')
 ax.legend()
 
-plt.savefig(f"GEMM_TB{TB}_MNK_B_benchmark.jpg")
+plt.savefig(f"GEMM_CUTE_TB{TB}_MNK_B_benchmark.jpg")

@@ -34,8 +34,8 @@ const char *getCublasErrorName(cublasStatus_t err);
     }
 
 // CUDA Measure Cost Time
+float mtime = 0.0; 
 #define GPU_Time(EXPER, cu_stream,iter,bytes)     \
-    float mtime = 0.0;                            \
     {                                             \
         for(int i=0; i<(iter+100); i++){              \
             (EXPER);                              \

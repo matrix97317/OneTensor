@@ -64,6 +64,9 @@
         "cfenv": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
-        "__nullptr": "cpp"
+        "__nullptr": "cpp",
+        "__bit_reference": "cpp",
+        "__string": "cpp",
+        "filesystem": "cpp"
     }
 }
