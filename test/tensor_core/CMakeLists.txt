@@ -268,3 +268,20 @@ target_link_libraries(
     -lcusparseLt
     -lone_tensor
     )
+
+add_executable(
+    layer_norm
+    "layer_norm.cu"
+    )
+# set link lib for executed file
+target_link_libraries(
+    layer_norm    
+    # vec_add_shared
+    -lcudnn
+    -lcuda
+    -lcublas
+    -lcudart
+    -lcusparse
+    -lcusparseLt
+    -lone_tensor
+    )
