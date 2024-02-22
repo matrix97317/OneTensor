@@ -94,3 +94,17 @@ target_link_libraries(
     -lcublas
     -lone_tensor
     )
+
+add_executable(
+    softmax
+    "softmax.cu"
+    )
+# set link lib for executed file
+target_link_libraries(
+    softmax
+    # vec_add_shared
+    -lcuda
+    -lcudart
+    -lcublas
+    -lone_tensor
+    )
